@@ -6,6 +6,9 @@
 	 * @version  1.0.2
 	 * @qq       401541212
 	 * 本工具库开源开放欢迎提供宝贵建议或意见
+	 * 本工具库目标追随最新浏览器特性，抛弃IE8，部分特性不支持IE9
+	 * 使用animation时不支持IE9 其它可以照常使用
+	 * 由于fadeIn slideDown等都使用的animation所以在IE9及以下无效
 	 */
 	//启用严格模式
 	'use strict';
@@ -304,6 +307,7 @@
 		//遍历参数列表进行数据合并
 		//Traverse parameter list data merging
 		
+		
 		each(itmes,function(){
 				
 			each(this,function(i){
@@ -318,6 +322,8 @@
 			})
 				
 		})
+		
+		return target
 		
 	};
 	
@@ -375,7 +381,7 @@
 				
 			returns = each(self,function(i){
 					
-				return callback[attr_apply](this,[i][attr_concat](argumentList))
+				return callback[attr_apply](this,[i,self[i]][attr_concat](argumentList))
 				
 			});
 		
@@ -432,6 +438,18 @@
       	return new Date().getTime()
         	
     };
+    
+    //将字符串转换成驼峰命名格式
+    //To convert a string to hump naming format
+    
+    var camelCase = function(str){
+    	
+		return(str + empty)[attr_replace](/-\w/g, function(str) {
+
+			return str[attr_substr](1, 1)[attr_toUpperCase]()
+		})
+    	
+    };
 	
 	//设置核心对象fn属性为核心原型属性并初始化属性与方法
 	//Set the core object fn attributes as prototype core attributes and initializes the attributes and methods
@@ -452,6 +470,8 @@
 			
 			var attr_selector = 'selector';
 			
+			var selector = selector || empty;
+			
 			//如果选择器不是字符串
 			//If the selector is not string
 			
@@ -466,6 +486,7 @@
 					
 				})
 				
+				
 			}else{
 				
 				//如果选择器中包含标签则根据标签创建html对象
@@ -477,7 +498,7 @@
 					
 				}else{
 					
-					self[attr_context] = isElement(context) ? context : document[attr_documentElement];
+					self[attr_context] = isElement(context) ? context : document;
 						
 					self[attr_selector] = selector;
 					
@@ -646,7 +667,7 @@
 					//若指定节点关系则当前元素不能等于自己，若指定选择器则进行选择器匹配，将匹配的元素添加到数组中
 					//Relationship if the specified node is the current element can not equal to yourself, if specified selectors selector matching, add of the matched elements to the array
 					
-					if( $this!=self && (selector ? self[attr_matchesSelector](selector) :real)) match[attr_push](self)
+					if( $this!=self && (selector ? self[attr_matchesSelector](selector) :real) && !inArray(self,match)) match[attr_push](self)
 					
 				})
     			
@@ -889,7 +910,7 @@
     			
     		//向fn对象属性中扩展节点关系查找方法
     		//Expand to the fn object attribute node relationship lookup method
-    			
+    		
     		nick[attr_fn][method] = function(selector){
     				
     			//最后一个参数为布尔值仅限最后三个方法使用时为真
@@ -1187,7 +1208,7 @@
         	//若第一参数为字符串且未指定第二参数将返回第一个被选中元素的样式
         	//If the first parameter is a string and returns the first do not specify a second parameter is selected elements of style
         	
-        	if(isString(attr) && value === undefined && $this)return window[attr_getComputedStyle]($this)[attr];
+        	if(isString(attr) && value === undefined && $this)return window[attr_getComputedStyle]($this)[camelCase(attr)];
         	
         	if(!isObject(attr)) css[attr] = value;
         	
@@ -1324,7 +1345,6 @@
     					
     		}while(target && target!=parent)
     		
-    		//console.log(events)
     		//遍历处理后的事件列表
     		//List traversal process after the event
    			each(events,function(){
@@ -1386,6 +1406,8 @@
     		
     		var attr_slip = 'slip';
     		
+    		var attr_offset = 'offset';
+    		
     		var moveX;
     		
     		var moveY;
@@ -1406,6 +1428,9 @@
     		
     		var abs = Math.abs;
     		
+    		var offset;
+    		
+    		var self = nick($this);
     		
     		//绑定触摸或鼠标按下事件
     		//Binding to touch or mouse press event
@@ -1421,15 +1446,16 @@
     			
     			e = event[attr_changedTouches] ? event[attr_changedTouches][0] : event;
     			
+    			offset = self[attr_offset]();
+    			
     			//根据事件对象保存事件开始时的信息
     			//According to the information at the start of the event object to save
     			
-    			$this[attr_startX] = e[attr_clientX];
+    			$this[attr_startX] = e[attr_clientX] ;
     			
-    			$this[attr_startY] = e[attr_clientY];
+    			$this[attr_startY] = e[attr_clientY] ;
     			
     			$this[attr_startTime] = getTime();
-    			
     			
     		});
     		
@@ -1443,9 +1469,9 @@
     			
 	    		e = event[attr_changedTouches] ? event[attr_changedTouches][0] : event;
 	    			
-	    		moveX = e[attr_clientX] - $this[attr_startX] || 0;
+	    		moveX = e[attr_clientX] - ($this[attr_startX] || 0);
 	    			
-	    		moveY = e[attr_clientY] - $this[attr_startY] || 0;
+	    		moveY = e[attr_clientY] - ($this[attr_startY] || 0);
     			
     			//如果拖动开关为假则不执行，拖动开关在开始时打开结束或者取消时关闭，执行滑动事件
     			//Switch is false, not executed if drag, drag the switch at the beginning open end or cancel closed, perform sliding event
@@ -1496,7 +1522,10 @@
     			
     			if(!moveX && !moveY){
     				
-    				type = useTime>touchTime && useTime<touchLongTime ? 'click' : useTime>touchTime ?'longclick' : empty;
+    				//如果是移动设备使用单击类型，如果是PC使用单击类型时不需要手势，直接使用单击事件，所以在PC下的单击手势类型为空
+    				//If click type for mobile devices, if the PC using click type need not be gestures, directly using the click event, so click gestures under PC type is empty
+    				
+    				type = useTime>touchTime && useTime<touchLongTime ? (isApp?'click':empty) : useTime>touchTime ?'longclick' : empty;
     				
     			}else
     			
@@ -1819,7 +1848,6 @@
 				
 				var animationRules = styleSheet[attr_animationRules];
 				
-				
 				/**
 				 * 遍历动画样式并生成动画规则，动画样式格式示例：
 				 * Traverse the animation style rules, and generate animation animation style format sample:
@@ -1919,7 +1947,7 @@
 				//如果第一参数为数值则表示设置动画时间，其它参数使用默认值
 				//If the first parameter for the numerical said set animation time, other parameters using the default values
 				
-				var time = toNumber(options) || 0.7;
+				var time = options === undefined ? 0.7 : isObject(options) ? options[attr_touchTimes[0]] !==undefined ? toNumber(options[attr_touchTimes[0]]) :0.7 : toNumber(options) ;
 				
 				var options = options || {};
 				
@@ -1946,7 +1974,7 @@
 				//若第一参数为可遍历的json或其它格式则遍历以下配置，若传递的参数有这些属性则使用否则使用默认值
 				//If the first parameter to traverse the json or other format traverse the following configuration, if the parameters passed with these properties is used or use the default values
 				
-				each({keyframe:animationName,time:time,ease:'ease',delay:0,count:1,direction:'normal',fill:'both'},function(i){
+				each({keyframe:animationName,time:time,ease:'ease',delay:0,count:1,direction:'normal'},function(i){
 				
 					value =  options[i] ===undefined ? this : options[i];
 					
@@ -2001,7 +2029,7 @@
 	   			//读取副本配置
 	   			//Read a copy of the configuration
 	   			
-	   			var coptyOptions = options ? options[2] : fake;
+	   			var copyOptions = options ? options[2] : fake;
 	   			
 	   			//保存强制执行队列时所需要的延迟时间
 	   			//Need to preserve the compulsory execution queue delay time
@@ -2024,22 +2052,34 @@
 	   					
 	   					options = options[0][attr_apply]($this,options[1]);
 	   					
+	   					
 	   					//获取副本配置
 	   					//Obtain a copy of the configuration
 	   					
-	   					coptyOptions = options[2];
+	   					copyOptions = options[2];
 	   					
 	   				}
+	   				
+		   			//更新动画名称以便下次执行动画判断是否重复执行动画
+		   			//Update the name of the animation so that the next execution animation judge whether to repeat the animation
+		   			
+		   			$this[attr_lastAnimationName] = copyOptions[attr_keyframe];
+		   			
+	   				//更新动画回调函数
+			   		//Update the animation callback function
+			   				
+			   		$this[attr_animationCallback] = options[1];
+	   				
 	   				
 	   				//根据配置副本检测当前动画规则是否有效，若规则无效或动画相同则强制执行队列，所谓有效是指当前样式与动画样式有区别
 	   				//According to a copy of the configuration to test whether the current animation rules effective, if the rule is invalid or animation is same enforce queue, effective refers to the current style has difference with animation style
 	   				
-		   			if(!checkAnimationRules($this,coptyOptions)){
+		   			if(!checkAnimationRules($this,copyOptions)){
 		   				
 		   				//计算当前队列所需要花费的时间，即便动画无效也依然按时间执行回调函数，时间为动画次数乘以动画时间加延时，计算的时间再乘以一千
 		   				//Calculate the amount of time required for the current queue, even if the animation is still invalid time in accordance with the callback function, as animated animation number multiplied by time and delay time, computing time and then multiplied by one thousand
 		   				
-		   				time = (coptyOptions.count*toNumber(coptyOptions.time)+toNumber(options.delay))*1000;
+		   				time = (copyOptions.count*toNumber(copyOptions.time)+toNumber(options.delay))*1000;
 		   				
 		   				//定时强制执行队列
 		   				//Timing enforcement queue
@@ -2063,21 +2103,28 @@
 		   				
 		   			}else{
 		   				
-		   				//动画规则有效直接执行样式
-		   				//Animation rules effective direct execution style
+		   				//如果动画时间为0则执行动画完成回调函数否则通过css样式调用动画
+		   				//If animation time to 0 to complete the callback function is executed animation or animation calling through the CSS styles
 		   				
-	   					css([$this],attr_animation,options[0]);
-	   							   			//更新动画回调函数
-			   			//Update the animation callback function
+		   				if(!toNumber(copyOptions[attr_touchTimes[0]])){
+		   					
+		   					animationStart[attr_call]($this);
+		   					
+		   					completeAnimationQueue[attr_call]($this,$this);
+		   					
+		   				}else{
+		   					
+			   				//动画规则有效直接执行样式
+			   				//Animation rules effective direct execution style
 			   				
-			   			$this[attr_animationCallback] = options[1];
+		   					css([$this],attr_animation,options[0]);
+		   					
+		   				}
+		   				
+	   					
 		   				
 		   			}
 		   			
-		   			//更新动画名称以便下次执行动画判断是否重复执行动画
-		   			//Update the name of the animation so that the next execution animation judge whether to repeat the animation
-		   			
-		   			$this[attr_lastAnimationName] = coptyOptions[attr_keyframe];
 		   			
 	   			}
 	   			
@@ -2088,7 +2135,6 @@
 	   		//Animation is complete execution of the callback function
 	   		
 	   		var completeAnimationQueue = function($this,attr,animationRules){
-	   			
 	   			
 	   			$this = this;
 	   			
@@ -2117,7 +2163,7 @@
 	   				//如果动画样式规则中并没有显示模式则不需要清除样式，否则遍历清除动画中设置的样式。fadeTo并不指定显示模式且要保留样式所以不做处理
 	   				//If did not show in the animation style rules mode does not clear the style, or the animation set in the traversal removed style. FadeTo doesn't specify the display mode and keep the style so don't do processing
 	   				
-	   				each(animationRules[attr_indexOf](attr_display)>-1?animationRules[attr_split](';'):fake,function(){
+	   				/*each(animationRules[attr_indexOf](attr_display)>-1?animationRules[attr_split](';'):fake,function(){
 	   					
 	   					//将css样式拆分获取属性名
 	   					//The CSS style split for attribute names
@@ -2126,6 +2172,12 @@
 	   					
 	   					//若css样式属性名不是显示模式则设置为null清除掉
 	   					//If the CSS style attribute names are not clear display mode is set to null
+	   					
+	   					if(attr!=attr_display)$this[attr_style][attr] = vacancy;
+	   					
+	   				})*/
+	   				
+	   				each($this[attr_commonAnimationRuing],function(attr){
 	   					
 	   					if(attr!=attr_display)$this[attr_style][attr] = vacancy;
 	   					
@@ -2191,6 +2243,15 @@
 	   						//Set style inline style for the current style to hold the animation state is not back to the original state of execution
 	   						
 	   						$this[attr_style][self[0]] = css([$this],self[0]);
+	   						
+	   						//如果执行的是公共动画则清除掉动画中已经执行的样式属性且该样式属性在公共动画运行状态中
+	   						//If the execution is public animation, remove the animation has executed the style and the style attribute in public animation running state
+	   						
+	   						if($this[attr_commonAnimationRuing] && self[0]!=attr_display && $this[attr_commonAnimationRuing][self[0]]!=undefined){
+	   							
+	   							$this[attr_style][self[0]] = vacancy;
+	   							
+	   						}
 	   						
 	   					})
 	   					
@@ -2355,13 +2416,22 @@
 	   			
 	   			iframeWindow = iframe.contentWindow;
 	   			
-	   			iframeWindow[attr_documentElement]
+	   			iframeWindow[attr_documentElement];
 	   			
-	   			iframeWindow[attr_document][attr_documentElement][attr_appendChild](tag);
+	   			try{
+		   			iframeWindow[attr_document][attr_documentElement][attr_appendChild](tag);
+		   			
+		   			tag = css([tag],attr_display);
+		   			
+		   			iframe[attr_parentNode]['remove'+attr_appendChild[attr_substr](6)](iframe);
 	   			
-	   			tag = css([tag],attr_display);
-	   			
-	   			iframe[attr_parentNode]['remove'+attr_appendChild[attr_substr](6)](iframe);
+	   			}catch(e){
+	   				
+		   			tag = css([tag],attr_display);
+		   			
+		   			iframe[attr_parentNode]['remove'+attr_appendChild[attr_substr](6)](iframe);
+		   			
+	   			}
 	   			
 	   			return tag
 	   			
@@ -2388,6 +2458,7 @@
 	   			var opacity =  isFadeTo ? toNumber(options) || toNumber(callback) || toNumber(opacity) : fake;
 	   			
 	   			var options =  isFadeTo ? callback : options;
+	   			
 	   			//获取当前元素的显示模式
 	   			//Access to the current element display mode
 	   			
@@ -2419,6 +2490,26 @@
 	   			//Access to the callback function
 	   			
 	   			var callback = isFunction(options) ? options : isFunction(callback) ? callback : isFunction(opacity) ? opacity : fake;
+				
+				//如果要执行显示且当前元素已经显示，或要执行隐藏但当前元素已经隐藏，那么强制设置结束时的样式等于起始时样式，样式虽未改变但是依旧按时间执行动画队列中的回调函数
+				//If you want to perform and the current element have shown that have been hidden, the current element or to perform a hidden but the compulsory set at the end of the style is equal to the initial style, style did not change but still implement the callback function in the animation queue according to time
+	   			
+	   			var isComplete  = isShow && currentDisplay !=attr_none  || !isShow && currentDisplay==attr_none;
+				
+	   			//显示动画中的显示模式不能为none，如果当前显示模式为none则获取当前元素默认的显示模式，不能强制设置为块级否则将影响元素本身的显示模式与布局
+	   			//Can't display in the animation display mode to none, if the current display mode to none has access to the current element to the default display mode, cannot force is set to block level otherwise will affect the display mode and the layout of the element itself
+	   			
+	   			showStyle[attr_display] = currentDisplay == attr_none ? getDefaultDisplay($this,attr_display,attr_none) : currentDisplay;
+				
+				//隐藏时的动画显示模式为none
+				//Hide the animation display mode to none
+				
+				hideStyle[attr_display] = attr_none;
+				
+				//设置元素显示，无论是显示或隐藏动画，开始显示时的显示模式应为显示状态
+				//Set elements, according to whether to show or hide the animation, began to show the display mode should be display status
+				
+				css(self,attr_display,showStyle[attr_display]);
 	   			
 	   			//遍历所需要设置的样式属性然后生成显示与隐藏的样式
 	   			//Traverse the need to set the style attribute and then generate the style of the show and hide
@@ -2433,31 +2524,17 @@
 	   				//要隐藏的样式都为0
 	   				//To hide the styles are 0
 	   					
-	   				hideStyle[attr] = 0;
-	   					
+	   				hideStyle[attr] = attr==attr_overflow ? attr_hidden:0;
+	   				
 	   			});
 	   			
-	   			//如果需要设置溢出属性则强制设置溢出样式为隐藏，动画结束后会自动清除，因兼容所以单独使用css控制
-	   			//If you need to set the overflow property is forced to set the overflow style to hide, after the animation is automatically cleared, compatible so separate control using CSS
-	   			
-	   			if(hideStyle[attr_overflow]!==undefined )css(self,attr_overflow,attr_hidden);
-	   			
-	   			//显示动画中的显示模式不能为none，如果当前显示模式为none则获取当前元素默认的显示模式，不能强制设置为块级否则将影响元素本身的显示模式与布局
-	   			//Can't display in the animation display mode to none, if the current display mode to none has access to the current element to the default display mode, cannot force is set to block level otherwise will affect the display mode and the layout of the element itself
-	   			
-	   			showStyle[attr_display] = currentDisplay == attr_none ? getDefaultDisplay($this,attr_display,attr_none) : currentDisplay;
-				
-				//隐藏时的动画显示模式为none
-				//Hide the animation display mode to none
-				
-				hideStyle[attr_display] = attr_none;
 				
 				if(isFadeTo){
 					
 					//当执行fadeto动画时动画显示状态根据当前透明度是否为元素的透明度进行判断
 					//When performing the fadeto animation animation display status according to whether the current transparency for elements of transparency
 					
-					isShow = currentOpaticy != showStyle[attr_opacity];
+					isComplete = isShow = currentOpaticy != showStyle[attr_opacity];
 					
 					//结束时的透明度为所指定的透明度
 					//At the end of the transparency as specified by the transparency
@@ -2474,19 +2551,9 @@
 				//如果要执行显示且当前元素已经显示，或要执行隐藏但当前元素已经隐藏，那么强制设置结束时的样式等于起始时样式，样式虽未改变但是依旧按时间执行动画队列中的回调函数
 				//If you want to perform and the current element have shown that have been hidden, the current element or to perform a hidden but the compulsory set at the end of the style is equal to the initial style, style did not change but still implement the callback function in the animation queue according to time
 				
-	   			if(isShow && currentDisplay !=attr_none  || !isShow && currentDisplay==attr_none ){
-	   				
-	   				hideStyle = showStyle = {} 
-	   				
-	   			}else{
-	   				
-					//设置元素显示，无论是显示或隐藏动画，开始显示时的显示模式应为显示状态
-					//Set elements, according to whether to show or hide the animation, began to show the display mode should be display status
-					
-					css(self,attr_display,showStyle[attr_display]);
-	   				
-	   			}
-	   				
+	   			if(isComplete)hideStyle = showStyle = {} ;
+	   			
+	   			
 				//调用动画解析函数返回新的options，返回值为数组格式，第一个元素为动画样式，第二个参数为副本配置
 				//Call animation analytic function returns the new options, the return value is an array format, the first element for the animation style, the second parameter is a copy of the configuration
 				
@@ -2497,11 +2564,10 @@
 				
 				options[attr_splice](1,0,callback);
 				
-				//设置公共动画运行状态为真
-				//Set the animation running state is true
+				//将需要清除的样式属性保存在公共动画运行状态属性中，以便在清除队列及动画完成之后将这些样式属性从style中清除，如果是fadeto则不需要清除样式
+				//Will need to remove the style attributes stored in public animation running state attributes, in order to remove the queue and animation is completed to remove from the style, the style attribute if you are fadeto do not remove the style
 				
-				$this[attr_commonAnimationRuing] = real;
-				
+				$this[attr_commonAnimationRuing] = extend({},isFadeTo?fake:showStyle);
 				
 	   			//返回队列中所需要的options参数
 	   			//The options parameter needed to return to the queue
@@ -2555,10 +2621,12 @@
 	   				
 	   				var methodStyle = commonAnimationStyle[i] || commonAnimationStyle[2];
 	   				
+	   				var attr_time = 'time';
+	   				
 	   				//如果是slide动画则设置padding属性只改变上下不改变左右
 	   				//If the slide of the animation set padding properties only changed not up and down or so
 	   				
-	   				if(i==1){
+	   				if(i==1 && !j){
 	   					
 	   					//修改padding样式为上下方向
 	   					//Modify the padding style for the up and down direction
@@ -2580,6 +2648,11 @@
 	   				j = types[i] ? j : i-2;
 	   				
 	   				nick[attr_fn][method] = function(options,callback,opacity){
+	   					
+	   					//如果是show hide toggle动画默认设置时间为0秒
+	   					//If it is the show hide 0 seconds to toggle animation default Settings
+	   					
+	   					if(i>1)isObject(options) && options[attr_time] === undefined ? options[attr_time] = 0 : options = 0;
 	   					
 	   					//调用动画当为fadeto时才传递透明度
 	   					//Call the animation when for fadeto didn't pass the transparency
@@ -2753,19 +2826,26 @@
     		
     		var updown = direction[attr_slice](0,2).join(' ');
     		
+    		var self;
+    		
     		//事件分为六组与类型列表对应，在类型列表中获取不到则默认为空
     		//Events are divided into six groups with type list, get less than the default in type list is empty
     		
-    		each([' dbl long'[attr_split](pattern_space),('over ennter out leave move'+updown)[attr_split](pattern_space),'start end move cancel'[attr_split](pattern_space),[empty][attr_concat](direction),updown[attr_split](pattern_space),'load error change scroll resize'[attr_split](pattern_space)  ],function(i){
+    		each(self = [' dbl long'[attr_split](pattern_space),('over enter out leave move'+updown)[attr_split](pattern_space),'start end move cancel'[attr_split](pattern_space),[empty][attr_concat](direction),updown[attr_split](pattern_space),'load error change scroll resize'[attr_split](pattern_space)  ],function(i){
     			
     			//遍历每组中的事件名称并根据事件类型生成新的事件名称
     			//Traversal events in each group name and generate a new event depending on the type of event names
     			
-    			each(this,function(){
+    			each(this,function(j){
     				
     				var typePrefix = types[i] || empty;
     				
     				var type = this;
+    				
+    				var over;
+    				
+    				var out;
+    				
     				
     				//第一组事件类型使用后缀其它使用前缀
     				//The first set of event types use suffix other use the prefix
@@ -2773,6 +2853,66 @@
     				nick[attr_fn][type = i ? typePrefix+type : type+typePrefix] = function(callback){
     					
     					return addEventListener(this,type,callback)
+    					
+    				}
+    				
+    				//在此添加hover方法，可以重复使用事件名称减少代码体积
+    				//In the add a hover method, can be repeated use the event name to reduce code size
+    				
+    				if(i==1 && j ==3){
+    					
+    					//如果是移动端使用触摸开始事件，否则使用鼠标移入事件
+    					//If is mobile end use touch start event, or use the mouse move events
+    					
+    					over = isApp ? types[2]+self[2][0]:types[1]+self[1][1];
+    					
+    					//如果是移动端使用触摸结束与触摸取消事件否则使用鼠标离开事件，但触摸结束事件并未真正使用，预留
+    					//If it is a mobile terminal using the touch end and touch to cancel events or use the mouse to leave, but did not really touch the end of the event is used, set aside
+    					
+    					out = isApp ? types[2]+self[2][1]+' '+types[2]+self[2][3]:type;
+    					
+    					//绑定移入移出hover事件
+    					//Binding to remove hover event
+    					
+    					nick[attr_fn]['hover'] = function(overCallback,outCallback){
+    						
+    						var self = this;
+    						
+    						var $this;
+    						
+    						var overCallback = isFunction(overCallback) ? overCallback : fake;
+    						
+    						var outCallback = isFunction(outCallback) ? outCallback : fake;
+    						
+    						//绑定移入事件，如果是移动端则单独处理
+    						//Bound to events, if it is a mobile terminal is treated separately
+    						
+    						addEventListener(self,over,isApp?function(e){
+    							
+    							$this = this;
+    							
+    							//如果是移动端立即执行移入事件
+    							//If it is executed immediately move into mobile end events
+    							
+    							!overCallback || overCallback[attr_call]($this,e);
+    							
+    							//移动端延迟执行离开事件
+    							//The mobile end delay the leave
+    							
+    							setTimeout(function(){
+    								
+    								!outCallback || outCallback[attr_call]($this,e)
+    								
+    							},50)
+    							
+    						}:overCallback)
+    						
+    						//如果不是移动端事件则绑定离开事件
+    						//If not mobile terminal is bound to leave events
+    						
+    						return isApp ? self : addEventListener(self,out,outCallback)
+    						
+    					}
     					
     				}
     				
@@ -2804,7 +2944,7 @@
 				var current;
 		
 				var index;
-		
+				
 				return bind(myself, function() {
 		
 					$this = this;
@@ -2819,7 +2959,7 @@
 					
 					each(className, function() {
 		
-						current = this;
+						current = this+empty;
 						
 						//获取当前类名在元素类名中的索引位置
 						//Gets the class name in the index of the element class names
@@ -3159,6 +3299,15 @@
 				empty:function(){
 					
 					return this.html(empty)
+					
+				},
+				
+				//绑定each方法以便遍历当前选择器匹配的元素
+				//Binding the each method in order to traverse the selector of the matched elements
+				
+				each:function(callback){
+					
+					return bind(this,callback)
 					
 				}
 				
@@ -3966,7 +4115,7 @@
 		//批量遍历并绑定方法
 		//Batch traversal and binding method
 		
-		each({isNick:isNick,each:each,inArray:inArray,ucword:ucword,parseJSON:parseJSON,map:map,param:param,cover:cover,callback:callback,ajax:ajax,array2Object:array2Object,toNumber:toNumber},function(i){
+		each({camelCase:camelCase,type:type,isNick:isNick,each:each,inArray:inArray,ucword:ucword,parseJSON:parseJSON,map:map,param:param,cover:cover,callback:callback,ajax:ajax,array2Object:array2Object,toNumber:toNumber,extend:extend},function(i){
 			
 			nick[i] = this
 			
